@@ -272,7 +272,9 @@ class YYSImageDownloaderGUI:
             actual_output_dir = os.path.join(output_dir, expected_dir_name)
             if not os.path.exists(actual_output_dir):
                 os.makedirs(actual_output_dir)
-            self.write_status(f"目标目录不符合格式，创建子目录: {expected_dir_name}\n")
+                self.write_status(f"目标目录不符合格式，创建子目录: {expected_dir_name}\n")
+            else:
+                self.write_status(f"子目录已存在，直接使用: {expected_dir_name}\n")
         
         self.write_status(f"正在访问网页: {url}\n")
         self.write_status(f"当前选择: {category} | 分辨率: {resolution}\n")
@@ -501,8 +503,19 @@ class YYSImageDownloaderGUI:
 if __name__ == "__main__":
     root = tk.Tk()
     # 设置窗口初始大小
-    root.geometry("320x480")
+    window_width = 320
+    window_height = 480
+    root.geometry(f"{window_width}x{window_height}")
     # 设置窗口最小大小，禁止缩小到更小尺寸
-    root.minsize(320, 480)
+    root.minsize(window_width, window_height)
+    
+    # 计算窗口居中位置
+    screen_width = root.winfo_screenwidth()
+    screen_height = root.winfo_screenheight()
+    x = (screen_width - window_width) // 2
+    y = (screen_height - window_height) // 2
+    # 设置窗口位置
+    root.geometry(f"{window_width}x{window_height}+{x}+{y}")
+    
     app = YYSImageDownloaderGUI(root)
     root.mainloop()
