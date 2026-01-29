@@ -8,7 +8,7 @@ import time
 from urllib.parse import urljoin
 import re
 
-def download_image(url, save_path, headers, callback=None):
+def download_image(url, save_path, headers, callback=None, progress_callback=None):
     try:
         if callback:
             callback(f"开始下载: {url}")
@@ -22,6 +22,10 @@ def download_image(url, save_path, headers, callback=None):
                 if chunk:
                     f.write(chunk)
                     downloaded_size += len(chunk)
+                    # 更新下载进度
+                    if progress_callback and total_size > 0:
+                        progress = (downloaded_size / total_size) * 100
+                        progress_callback(progress)
         
         if callback:
             callback(f"下载成功: {os.path.basename(save_path)} ({downloaded_size/1024:.1f}KB)")
@@ -144,6 +148,48 @@ class YYSImageDownloaderGUI:
             state=tk.DISABLED
         )
         self.stop_btn.pack(side=tk.RIGHT, fill=tk.X, expand=True)
+        
+        # 进度条框架
+        self.progress_frame = ttk.LabelFrame(self.main_frame, text="下载进度", padding="10")
+        self.progress_frame.pack(fill=tk.X, pady=(0, 15))
+        
+        # 总进度条
+        self.total_progress_frame = ttk.Frame(self.progress_frame)
+        self.total_progress_frame.pack(fill=tk.X, pady=(0, 8))
+        
+        self.total_progress_label = ttk.Label(self.total_progress_frame, text="总进度:")
+        self.total_progress_label.pack(side=tk.LEFT, padx=(0, 10))
+        
+        self.total_progress_var = tk.DoubleVar(value=0)
+        self.total_progress_bar = ttk.Progressbar(
+            self.total_progress_frame,
+            variable=self.total_progress_var,
+            maximum=100,
+            length=300
+        )
+        self.total_progress_bar.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
+        
+        self.total_progress_percent = ttk.Label(self.total_progress_frame, text="0%")
+        self.total_progress_percent.pack(side=tk.RIGHT)
+        
+        # 当前图片进度条
+        self.current_progress_frame = ttk.Frame(self.progress_frame)
+        self.current_progress_frame.pack(fill=tk.X)
+        
+        self.current_progress_label = ttk.Label(self.current_progress_frame, text="当前图片:")
+        self.current_progress_label.pack(side=tk.LEFT, padx=(0, 10))
+        
+        self.current_progress_var = tk.DoubleVar(value=0)
+        self.current_progress_bar = ttk.Progressbar(
+            self.current_progress_frame,
+            variable=self.current_progress_var,
+            maximum=100,
+            length=300
+        )
+        self.current_progress_bar.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
+        
+        self.current_progress_percent = ttk.Label(self.current_progress_frame, text="0%")
+        self.current_progress_percent.pack(side=tk.RIGHT)
         
         # 状态文本框
         self.status_frame = ttk.LabelFrame(self.main_frame, text="下载状态", padding="10")
@@ -292,11 +338,17 @@ class YYSImageDownloaderGUI:
             image_urls = filtered_urls
             self.write_status(f"找到 {len(image_urls)} 张 {category} 图片\n")
             self.write_status("已按日期降序、序号升序排序\n")
-            
+        
             total_images = len(image_urls)
             success_count = 0
             downloaded_count = 0
             
+            # 重置进度条
+            self.root.after(0, lambda: self.total_progress_var.set(0))
+            self.root.after(0, lambda: self.total_progress_percent.config(text="0%"))
+            self.root.after(0, lambda: self.current_progress_var.set(0))
+            self.root.after(0, lambda: self.current_progress_percent.config(text="0%"))
+        
             while downloaded_count < total_images:
                 # 检查是否需要停止
                 if self.stop_flag.is_set():
@@ -315,6 +367,11 @@ class YYSImageDownloaderGUI:
                         break
                     
                     self.write_status(f"处理第 {i} 张图片...\n")
+                    
+                    # 重置当前图片进度条
+                    self.root.after(0, lambda: self.current_progress_var.set(0))
+                    self.root.after(0, lambda: self.current_progress_percent.config(text="0%"))
+                    
                     try:
                         if not img_url.startswith('http'):
                             img_url = urljoin(url, img_url)
@@ -342,15 +399,33 @@ class YYSImageDownloaderGUI:
                         
                         if os.path.exists(save_path):
                             self.write_status(f"文件已存在，跳过下载: {file_name}\n")
+                            # 更新总进度
+                            progress = (i / total_images) * 100
+                            self.root.after(0, lambda p=progress: self.total_progress_var.set(p))
+                            self.root.after(0, lambda p=progress: self.total_progress_percent.config(text=f"{int(p)}%"))
                             continue
                         
-                        if download_image(img_url, save_path, headers, self.write_status):
+                        # 当前图片进度回调
+                        def current_progress_callback(progress):
+                            self.root.after(0, lambda p=progress: self.current_progress_var.set(p))
+                            self.root.after(0, lambda p=progress: self.current_progress_percent.config(text=f"{int(p)}%"))
+                        
+                        if download_image(img_url, save_path, headers, self.write_status, current_progress_callback):
                             success_count += 1
                             self.write_status(f"下载成功计数: {success_count}\n")
+                        
+                        # 更新总进度
+                        progress = (i / total_images) * 100
+                        self.root.after(0, lambda p=progress: self.total_progress_var.set(p))
+                        self.root.after(0, lambda p=progress: self.total_progress_percent.config(text=f"{int(p)}%"))
                         
                         time.sleep(0.5)
                     except Exception as e:
                         self.write_status(f"处理图片时出错: {e}\n")
+                        # 更新总进度
+                        progress = (i / total_images) * 100
+                        self.root.after(0, lambda p=progress: self.total_progress_var.set(p))
+                        self.root.after(0, lambda p=progress: self.total_progress_percent.config(text=f"{int(p)}%"))
                         continue
                 
                 downloaded_count = batch_end
@@ -358,9 +433,9 @@ class YYSImageDownloaderGUI:
                 if downloaded_count < total_images:
                     self.write_status(f"\n已下载 {downloaded_count}/{total_images} 张图片\n")
                     self.write_status(f"继续下载下一批 {batch_size} 张图片...\n")
-            
-            self.write_status(f"\n下载完成! 成功下载 {success_count}/{downloaded_count} 张图片\n")
-            self.write_status(f"图片保存在: {os.path.abspath(actual_output_dir)}\n")
+                
+                self.write_status(f"\n下载完成! 成功下载 {success_count}/{downloaded_count} 张图片\n")
+                self.write_status(f"图片保存在: {os.path.abspath(actual_output_dir)}\n")
             
         except Exception as e:
             self.write_status(f"发生错误: {e}\n")
