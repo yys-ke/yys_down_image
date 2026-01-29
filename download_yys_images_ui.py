@@ -53,7 +53,7 @@ class YYSImageDownloaderGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("阴阳师图片下载器")
-        self.root.geometry("320x480")
+        # 窗口大小由外部设置，这里不再重复设置
         self.root.resizable(True, True)
         
         # 停止标志
@@ -68,8 +68,15 @@ class YYSImageDownloaderGUI:
         }
         
         self.selected_category = '横版'
-        self.selected_resolution = self.category_resolutions['横版'][0]
-        self.output_dir = os.path.join(os.path.expanduser("~"), "yys_images")
+        # 横版默认选择 1920x1080，竖版默认选择 1080x1920
+        if self.selected_category == '横版':
+            self.selected_resolution = '1920x1080'
+        elif self.selected_category == '竖版':
+            self.selected_resolution = '1080x1920'
+        else:
+            self.selected_resolution = self.category_resolutions[self.selected_category][0]
+        # 保存目录默认空白，必须手动选择
+        self.output_dir = ""
         
         # 创建主框架
         self.main_frame = ttk.Frame(root, padding="20")
@@ -212,7 +219,13 @@ class YYSImageDownloaderGUI:
     def on_category_change(self):
         """分类改变时更新分辨率选项"""
         self.selected_category = self.category_var.get()
-        self.selected_resolution = self.category_resolutions[self.selected_category][0]
+        # 横版默认选择 1920x1080，竖版默认选择 1080x1920
+        if self.selected_category == '横版':
+            self.selected_resolution = '1920x1080'
+        elif self.selected_category == '竖版':
+            self.selected_resolution = '1080x1920'
+        else:
+            self.selected_resolution = self.category_resolutions[self.selected_category][0]
         self.resolution_var.set(self.selected_resolution)
         self.resolution_combobox['values'] = self.category_resolutions[self.selected_category]
     
@@ -440,6 +453,12 @@ class YYSImageDownloaderGUI:
     
     def start_download(self):
         """开始下载"""
+        # 验证保存目录是否已选择
+        output_dir = self.dir_var.get().strip()
+        if not output_dir:
+            messagebox.showerror("错误", "请先选择保存目录")
+            return
+        
         # 清空停止标志
         self.stop_flag.clear()
         
@@ -455,7 +474,6 @@ class YYSImageDownloaderGUI:
         # 获取选择的值
         category = self.category_var.get()
         resolution = self.resolution_var.get()
-        output_dir = self.dir_var.get()
         
         # 在后台线程中执行下载
         def download_thread():
@@ -482,5 +500,9 @@ class YYSImageDownloaderGUI:
 
 if __name__ == "__main__":
     root = tk.Tk()
+    # 设置窗口初始大小
+    root.geometry("320x480")
+    # 设置窗口最小大小，禁止缩小到更小尺寸
+    root.minsize(320, 480)
     app = YYSImageDownloaderGUI(root)
     root.mainloop()
