@@ -56,6 +56,9 @@ class YYSImageDownloaderGUI:
         # 窗口大小由外部设置，这里不再重复设置
         self.root.resizable(True, True)
         
+        # 设置窗口关闭事件处理
+        self.root.protocol("WM_DELETE_WINDOW", self.on_window_close)
+        
         # 停止标志
         self.stop_flag = threading.Event()
         self.download_thread = None
@@ -468,6 +471,13 @@ class YYSImageDownloaderGUI:
         self.download_btn.config(state=tk.DISABLED)
         self.stop_btn.config(state=tk.NORMAL)
         
+        # 禁用其他控件
+        for btn in self.category_buttons:
+            btn.config(state=tk.DISABLED)
+        self.resolution_combobox.config(state=tk.DISABLED)
+        self.dir_entry.config(state=tk.DISABLED)
+        self.browse_btn.config(state=tk.DISABLED)
+        
         # 清空状态文本
         self.status_text.config(state=tk.NORMAL)
         self.status_text.delete(1.0, tk.END)
@@ -489,6 +499,11 @@ class YYSImageDownloaderGUI:
                 # 启用下载按钮，禁用停止按钮
                 self.root.after(0, lambda: self.download_btn.config(state=tk.NORMAL))
                 self.root.after(0, lambda: self.stop_btn.config(state=tk.DISABLED))
+                # 重新启用其他控件
+                self.root.after(0, lambda: [btn.config(state=tk.NORMAL) for btn in self.category_buttons])
+                self.root.after(0, lambda: self.resolution_combobox.config(state="readonly"))
+                self.root.after(0, lambda: self.dir_entry.config(state=tk.NORMAL))
+                self.root.after(0, lambda: self.browse_btn.config(state=tk.NORMAL))
         
         self.download_thread = threading.Thread(target=download_thread)
         self.download_thread.daemon = True
@@ -499,6 +514,29 @@ class YYSImageDownloaderGUI:
         self.write_status("\n正在停止下载...\n")
         self.stop_flag.set()
         self.stop_btn.config(state=tk.DISABLED)
+    
+    def on_window_close(self):
+        """窗口关闭事件处理"""
+        if self.download_thread and self.download_thread.is_alive():
+            # 如果正在下载，先设置停止标志
+            self.write_status("\n检测到窗口关闭，正在停止下载...\n")
+            self.stop_flag.set()
+            # 等待下载线程完成
+            self.write_status("\n等待当前图片下载完成...\n")
+            # 禁用关闭按钮
+            self.root.protocol("WM_DELETE_WINDOW", lambda: None)
+            
+            # 在后台等待线程完成后关闭窗口
+            def wait_and_close():
+                self.download_thread.join(timeout=60)  # 最多等待60秒
+                self.root.after(0, self.root.destroy)
+            
+            close_thread = threading.Thread(target=wait_and_close)
+            close_thread.daemon = True
+            close_thread.start()
+        else:
+            # 如果没有在下载，直接关闭
+            self.root.destroy()
 
 if __name__ == "__main__":
     root = tk.Tk()
