@@ -267,17 +267,18 @@ class YYSImageDownloaderGUI:
         expected_dir_name = f"{category}_{resolution}"
         
         dir_name = os.path.basename(output_dir.rstrip(os.sep))
-        
-        if dir_name == expected_dir_name:
-            actual_output_dir = output_dir
+
+        pattern = r'^[\u4e00-\u9fa5]+_\d+x\d+$'
+        if re.fullmatch(pattern, dir_name):
+            output_dir = os.path.dirname(output_dir)
             self.write_status(f"目标目录已符合格式: {dir_name}\n")
+
+        actual_output_dir = os.path.join(output_dir, expected_dir_name)
+        if not os.path.exists(actual_output_dir):
+            os.makedirs(actual_output_dir)
+            self.write_status(f"目标目录不符合格式，创建子目录: {expected_dir_name}\n")
         else:
-            actual_output_dir = os.path.join(output_dir, expected_dir_name)
-            if not os.path.exists(actual_output_dir):
-                os.makedirs(actual_output_dir)
-                self.write_status(f"目标目录不符合格式，创建子目录: {expected_dir_name}\n")
-            else:
-                self.write_status(f"子目录已存在，直接使用: {expected_dir_name}\n")
+            self.write_status(f"子目录已存在，直接使用: {expected_dir_name}\n")
         
         self.write_status(f"正在访问网页: {url}\n")
         self.write_status(f"当前选择: {category} | 分辨率: {resolution}\n")
