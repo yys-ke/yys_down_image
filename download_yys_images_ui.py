@@ -52,7 +52,7 @@ def get_image_category(resolution):
 class YYSImageDownloaderGUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("阴阳师图片下载器")
+        self.root.title("阴阳师壁纸下载器")
         # 窗口大小由外部设置，这里不再重复设置
         self.root.resizable(True, True)
         
@@ -83,7 +83,7 @@ class YYSImageDownloaderGUI:
         self.main_frame.pack(fill=tk.BOTH, expand=True)
         
         # 标题
-        self.title_label = ttk.Label(self.main_frame, text="阴阳师图片下载器", font=("SimHei", 18, "bold"))
+        self.title_label = ttk.Label(self.main_frame, text="阴阳师壁纸下载器", font=("SimHei", 18, "bold"))
         self.title_label.pack(pady=(0, 20))
         
         # 分类选择
