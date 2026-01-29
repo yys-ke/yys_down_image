@@ -280,6 +280,9 @@ class YYSImageDownloaderGUI:
         else:
             self.write_status(f"子目录已存在，直接使用: {expected_dir_name}\n")
         
+        # 更新界面显示的保存目录
+        self.root.after(0, lambda: self.dir_var.set(actual_output_dir))
+        
         self.write_status(f"正在访问网页: {url}\n")
         self.write_status(f"当前选择: {category} | 分辨率: {resolution}\n")
         self.write_status(f"实际保存目录: {os.path.abspath(actual_output_dir)}\n")
