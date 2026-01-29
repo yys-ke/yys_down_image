@@ -53,7 +53,7 @@ class YYSImageDownloaderGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("阴阳师图片下载器")
-        self.root.geometry("600x500")
+        self.root.geometry("320x480")
         self.root.resizable(True, True)
         
         # 停止标志
@@ -157,38 +157,36 @@ class YYSImageDownloaderGUI:
         self.total_progress_frame = ttk.Frame(self.progress_frame)
         self.total_progress_frame.pack(fill=tk.X, pady=(0, 8))
         
-        self.total_progress_label = ttk.Label(self.total_progress_frame, text="总进度:")
+        self.total_progress_label = ttk.Label(self.total_progress_frame, text="总进度:", width=8)
         self.total_progress_label.pack(side=tk.LEFT, padx=(0, 10))
         
         self.total_progress_var = tk.DoubleVar(value=0)
         self.total_progress_bar = ttk.Progressbar(
             self.total_progress_frame,
             variable=self.total_progress_var,
-            maximum=100,
-            length=300
+            maximum=100
         )
         self.total_progress_bar.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
         
-        self.total_progress_percent = ttk.Label(self.total_progress_frame, text="0%")
+        self.total_progress_percent = ttk.Label(self.total_progress_frame, text="0%", width=5)
         self.total_progress_percent.pack(side=tk.RIGHT)
         
         # 当前图片进度条
         self.current_progress_frame = ttk.Frame(self.progress_frame)
         self.current_progress_frame.pack(fill=tk.X)
         
-        self.current_progress_label = ttk.Label(self.current_progress_frame, text="当前图片:")
+        self.current_progress_label = ttk.Label(self.current_progress_frame, text="当前图片:", width=8)
         self.current_progress_label.pack(side=tk.LEFT, padx=(0, 10))
         
         self.current_progress_var = tk.DoubleVar(value=0)
         self.current_progress_bar = ttk.Progressbar(
             self.current_progress_frame,
             variable=self.current_progress_var,
-            maximum=100,
-            length=300
+            maximum=100
         )
         self.current_progress_bar.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
         
-        self.current_progress_percent = ttk.Label(self.current_progress_frame, text="0%")
+        self.current_progress_percent = ttk.Label(self.current_progress_frame, text="0%", width=5)
         self.current_progress_percent.pack(side=tk.RIGHT)
         
         # 状态文本框
